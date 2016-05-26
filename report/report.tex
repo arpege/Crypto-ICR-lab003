@@ -1,0 +1,102 @@
+\documentclass[a4paper]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[font=bf,skip=\baselineskip]{caption}
+
+
+\usepackage{minted}
+\usepackage{listings}
+\usepackage{hyperref}
+
+\usepackage{lastpage}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+
+\lstset{
+    literate={~} {$\sim$}{1}
+}
+
+\usepackage{titling}
+\newcommand{\subtitle}[1]{
+  \posttitle{
+    \par\end{center}
+    \begin{center}\large#1\end{center}
+    \vskip0.5em}
+}
+
+\newmint{python}{
+frame=lines,
+framesep=2mm,
+linenos,
+breaklines=true,
+}
+
+
+% PAGE STYLE
+\pagestyle{fancy}
+\fancyhf{}
+
+\lhead{Industrial Cryptography}
+\rhead{Fault Attacks against RSA-CRT}
+\cfoot{Page \thepage \hspace{1pt} sur \pageref{LastPage}}
+
+\fancypagestyle{plain}{%
+\fancyhf{} % vide l’en-tête et le pied~de~page.
+\fancyhead[R]{Industrial Cryptography -- Fault Attacks against RSA-CRT}
+\fancyfoot[C]{Page \thepage \hspace{1pt} sur \pageref{LastPage}} % numéro de la page en cours en gras
+% et centré en pied~de~page.
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}}
+
+
+
+% TITLE PAGE
+\title{ICR -- Practical Work \#3}
+\subtitle{Fault Attacks against RSA-CRT}
+
+\author{Gugger Joël \thanks{\ \href{mailto:joel.gugger@master.hes-so.ch}{joel.gugger@master.hes-so.ch}}}
+\date{\today}
+
+\pagenumbering{arabic}
+\begin{document} 
+\maketitle
+
+\abstract{A way to accelerate the RSA signature procedure consists in exploiting the fact that one knows the two primes p and q, as it is a private-key operation, and to use the Chinese Remainder Theorem (CRT). 
+
+The goal of this practical work consists in implementing a fast RSA signature procedure that exploits the CRT and to study the security of such an implementation at the light of fault attacks. This practical work can be implemented either in C, C++, Java or Python, with the big-numbers arithmetic library of your choice.}
+
+\tableofcontents
+
+ 
+\chapter{RSA-CRT}
+\section{Questions}
+\subsection{How have you tested that your routines are properly working?}
+
+\subsection{What is the gain in terms of speed that you obtain when using RSA-CRT with respect to a standard RSA signature generation procedure?}
+
+\subsection{What are the values that one could pre-compute and store besides n and d, in order to speed up as much as possible the signature generation procedure?}
+
+
+\section{Implementation}
+\subsection{RSA key generation routine}
+
+\subsection{Standard RSA signature and verification routines}
+
+\subsection{Fast RSA signature procedure}
+
+
+\newpage
+\vspace*{6 cm}
+\begin{center}
+\textbf{Abstract} \\
+\ \\
+The sources of the project are available on GitHub at the following address: \\
+\href{https://github.com/GuggerJoel/Crypto-ICR-lab003}{https://github.com/GuggerJoel/Crypto-ICR-lab003}
+\end{center}
+
+
+
+
+
+\end{document}
