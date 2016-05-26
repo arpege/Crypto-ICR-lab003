@@ -70,6 +70,8 @@ The goal of this practical work consists in implementing a fast RSA signature pr
 
  
 \chapter{RSA-CRT}
+This part is dedicated to the implementation of a RSA-CRT fast signing procedure. One can assume that 1024-bit RSA keys are used and that the digest formatting operation is performed elsewhere.
+
 \section{Questions}
 \subsection{How have you tested that your routines are properly working?}
 
@@ -84,6 +86,30 @@ The goal of this practical work consists in implementing a fast RSA signature pr
 \subsection{Standard RSA signature and verification routines}
 
 \subsection{Fast RSA signature procedure}
+
+
+\chapter{Boneh-DeMillo-Lipton Attack}
+In 1997, Boneh, DeMillo and Lipton have demonstrated that if a fault is induced during one of the two partial signature computation steps, that erroneous signature can be exploited in order to factor the public modulus.
+
+\section{Mathematical description}
+\textbf{Task 2.} \textit{Describe in mathematical terms how the Boneh-DeMillo-Lipton fault attack against RSA-CRT is working.}
+
+\section{Questions}
+\subsection{In practice, how is it possible to induce faults in cryptographic implementations?}
+\subsection{Is this attack working on a non-deterministic padding scheme?}
+
+\section{Simulating Boneh-DeMillo-Lipton attack}
+\textbf{Task 3.} \textit{Write a program simulating Boneh-DeMillo-Lipton attack that allows to factor $n = pq$ in a very efficient way.}
+
+
+\chapter{Implementing Shamir’s Trick}
+Several countermeasures have been proposed to defend against Boneh-DeMillo-Lipton attack. In this part, we will study and implement the one that is known as \textit{Shamir’s trick}. This technique essentially works as follows: the partial signatures are computed modulo $rp$ and $rq$, where $r$ is a small (i.e., 32-bit) random integer, instead of working modulo $p$ and $q$, respectively.
+
+\section{Mathematical description}
+\textbf{Task 4.} \textit{Describe in mathematical terms how Shamir’s trick works.}
+
+\section{Implementation}
+\textbf{Task 5.} \textit{Implement an RSA-CRT routine protected against Boneh-DeMillo-Lipton attack thanks to Shamir’s trick.}
 
 
 \newpage
