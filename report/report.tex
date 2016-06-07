@@ -184,7 +184,57 @@ h = q_{inv} * (m1 - m2)\ (\bmod\ p)
 m = m2 + h*q 
 \]
 
-\ccode[firstline=254, lastline=293]{../src/rsa.c}
+The RSA -CRT implementation is similar in all respects to the standard implementation. Only the calculation portion varies. Again, the GMP library provided us with the necessary methods for calculations on large numbers.
+
+\ccode[firstline=275, lastline=287]{../src/rsa.c}
+
+For a given string of characters, both implementations provide the same signature. This signature is then verified by the function verify\_textbookRSA\\\_standard\_signature. If the signature is not valide, an error message is output.
+
+\ccode[firstline=361, lastline=377]{../src/rsa.c}
+
+This code displays the following results. Both generation routine output the same result, the verification pass the first time, and the second verification, which has failed, failed. The behavior is as expected.
+
+\begin{minted}[
+    linenos=true,
+    breaklines=true,
+    frame=leftline,
+    framerule=0.4pt,
+    framesep=2mm,
+    tabsize=4,]{bash}
+s : 768888fb6b65df66c8b0857cbc494728a8736c77d02bdc09\
+461f48baba0219702737eb8ee4540caf6d2bf1d1b8fca7b1aae8\
+1c3810f00712ef042417d4ebff335c05c6112c10ec9314b1a577d\
+99084ff5974492161e9ba90f290dc592315980963323e41a89c7\
+c18d9ad88a4e6bb1eb6e66b784e5b8a01d6eae657547d16849\
+b751a9c5091326a3c2a3ed2f49caba7bc86e4e36c75ed44b4ed\
+94320dc2b66c42531a6e0f25b8b0ef0d67d529adf6fdf05fe1d6ff\
+0916f743da5b891903d893d66a4a34a5b5507b8e6bc7db34917\
+b2c099bc30c0160377ac4b174ec5a696dc540f802b39b921805\
+551da00bf861900e088199377c7d2c2cd4e827c879d9bb651
+
+RSA-CRT signature:
+s : 768888fb6b65df66c8b0857cbc494728a8736c77d02bdc094\
+61f48baba0219702737eb8ee4540caf6d2bf1d1b8fca7b1aae81\
+c3810f00712ef042417d4ebff335c05c6112c10ec9314b1a577d\
+99084ff5974492161e9ba90f290dc592315980963323e41a89c\
+7c18d9ad88a4e6bb1eb6e66b784e5b8a01d6eae657547d168\
+49b751a9c5091326a3c2a3ed2f49caba7bc86e4e36c75ed44b\
+4ed94320dc2b66c42531a6e0f25b8b0ef0d67d529adf6fdf05fe\
+1d6ff0916f743da5b891903d893d66a4a34a5b5507b8e6bc7d\
+b34917b2c099bc30c0160377ac4b174ec5a696dc540f802b39\
+b921805551da00bf861900e088199377c7d2c2cd4e827c879\
+d9bb651
+
+v : b19318d0e9ba063a5fe94bc3cb9d9b5d79e06bfed220c86fb137cb40aef36140
+
+m : b19318d0e9ba063a5fe94bc3cb9d9b5d79e06bfed220c86fb137cb40aef36140
+
+v : b19318d0e9ba063a5fe94bc3cb9d9b5d79e06bfed220c86fb137cb40aef36140
+
+m : 78f5975a5d705e9528dd0e8d41206534b7e8c269b139bb151d5c0ca0928247c3
+
+Error: signature not valid
+\end{minted}
 
 
 \chapter{Boneh-DeMillo-Lipton Attack}
