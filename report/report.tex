@@ -260,10 +260,15 @@ In 1997, Boneh, DeMillo and Lipton have demonstrated that if a fault is induced 
 
 \section{Mathematical description}
 \textbf{Task 2.} \textit{Describe in mathematical terms how the Boneh-DeMillo-Lipton fault attack against RSA-CRT is working.}
+\\ \\
+As $s^e \equiv h(m)\ (\bmod\ p)$ but $s^e \not\equiv h(m)\ (\bmod\ q)$ we can factorize $n$ by \\ $p = \textrm{GCD}(s^e - h(m), n)$
 
 \section{Questions}
 \subsection{In practice, how is it possible to induce faults in cryptographic implementations?}
+
+
 \subsection{Is this attack working on a non-deterministic padding scheme?}
+No, this attack applies only to any deterministic padding function $\mu$, such as RSA PKCS\#1 v1.5 or Full-Domain Hash.
 
 \section{Simulating Boneh-DeMillo-Lipton attack}
 \textbf{Task 3.} \textit{Write a program simulating Boneh-DeMillo-Lipton attack that allows to factor $n = p*q$ in a very efficient way.}
