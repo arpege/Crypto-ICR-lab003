@@ -105,7 +105,7 @@ int generate_textbookRSA_keys (RSA_public_key_t *pubkey,
         TRACEVAR (r, "r");
         TRACEVAR (q, "q");
 
-        /* n = p*q */
+        /* $n = p*q$ */
         mpz_mul (pubkey->n, p, q);
 
         /* Copying n to the private key structure */
@@ -115,23 +115,23 @@ int generate_textbookRSA_keys (RSA_public_key_t *pubkey,
         mpz_set_ui (pubkey->e, RSA_PUBLIC_EXPONENT);
         TRACEVAR (pubkey->e, "e");
 
-        /* Computing p-1 */
+        /* Computing $p-1$ */
         mpz_sub_ui (pm1, p, 1);
-        /* Computing q-1 */
+        /* Computing $q-1$ */
         mpz_sub_ui (qm1, q, 1);
-        /* Computing (p-1)*(q-1) */
+        /* Computing $(p-1)*(q-1)$ */
         mpz_mul (pm1qm1, pm1, qm1);
 
         mpz_set (privkey->p, p);
         mpz_set (privkey->q, q);
 
-        /* dP = (1/e) mod (p-1) */
+        /* $d_P = e^{-1} \pmod{p-1}$ */
         mpz_invert (privkey->dP, pubkey->e, pm1);
         TRACEVAR (privkey->dP, "dP");
-        /* dQ = (1/e) mod (q-1) */
+        /* $d_Q = e^{-1} \pmod{1-1}$ */
         mpz_invert (privkey->dQ, pubkey->e, qm1);
         TRACEVAR (privkey->dQ, "dQ");
-        /* qInv = (1/q) mod p */
+        /* $q_{Inv} = q^{-1} \pmod{p}$ */
         mpz_invert (privkey->qInv, privkey->q, p);
         TRACEVAR (privkey->qInv, "qInv");
 
@@ -217,12 +217,14 @@ int init_RSA_pubkey (RSA_public_key_t **pubkey)
 
 
 
-int generate_textbookRSA_standard_signature (mpz_t s,
-                                             uchar data[],
-                                             const RSA_private_key_t *privkey)
+int generate_textbookRSA_standard_signature (
+    mpz_t s,
+    uchar data[],
+    const RSA_private_key_t *privkey)
 {
-    /* Process of signing the message m (which is BigInteger) : */ 
-    /* it uses the secret key $sk=(p,q,d)$ so that $s = m^d mod n$ where $n=p*q$. */
+    /* Process of signing the message m */ 
+    /* it uses the secret key $sk=(p,q,d)$ */ 
+    /* so that $s = m^d \pmod{n}$ where $n=p*q$. */
     assert(s != NULL);
     assert(data != NULL);
     assert(privkey != NULL);
@@ -239,7 +241,7 @@ int generate_textbookRSA_standard_signature (mpz_t s,
 
     mpz_import (m, sizeof (hash), 1, 1, 1, 0, hash);
 
-    /* Computing $s = m^d mod n$ */
+    /* Computing $s = m^d \pmod{n}$ */
     mpz_powm (s, m, privkey->d, privkey->n);
 
     TRACEVAR (s, "s");
@@ -249,12 +251,11 @@ int generate_textbookRSA_standard_signature (mpz_t s,
 }
 
 
-int generate_textbookRSA_CRT_signature (mpz_t s,
-                                        uchar data[],
-                                        const RSA_private_key_t *privkey)
+int generate_textbookRSA_CRT_signature (
+    mpz_t s,
+    uchar data[],
+    const RSA_private_key_t *privkey)
 {
-    /* Process of signing the message m (which is BigInteger) : */ 
-    /* it uses the secret key $sk=(p,q,d)$ so that $s = m^d mod n$ where $n=p*q$. */
     assert(s != NULL);
     assert(data != NULL);
     assert(privkey != NULL);
@@ -271,21 +272,19 @@ int generate_textbookRSA_CRT_signature (mpz_t s,
 
     mpz_import (m, sizeof (hash), 1, 1, 1, 0, hash);
 
-    /* Computing $s = m^d mod n$ with RSA-CRT */
-    //mpz_powm (s, m, privkey->d, privkey->n);
-    /* 
-    m1 = m^dP mod p
-    m2 = m^dQ mod q
-    h = qInv * (m1 - m2) mod p
-    s = m2 + h * q */
+    /* Computing $s = m^d\ (\bmod\ n)$ with RSA-CRT */
+
+    /* $m1 = c^{d_p}\ (\bmod\ p)$ */
     mpz_powm (m1, m, privkey->dP, privkey->p);
+    /* $m2 = c^{d_q}\ (\bmod\ q)$ */
     mpz_powm (m2, m, privkey->dQ, privkey->q);
+    /* $h = q_{inv} * (m1 - m2)\ (\bmod\ p)$ */
     mpz_sub (m1m2, m1, m2);
     mpz_mul (qh, privkey->qInv, m1m2);
-    mpz_powm_ui (h, qh, 1, privkey->p);
+    mpz_mod (h, qh, privkey->p);
+    /* $m = m2 + h*q$  */
     mpz_mul (hq, h, privkey->q);
     mpz_add (s, m2, hq);
-
 
     TRACEVAR (s, "s");
 
@@ -294,14 +293,17 @@ int generate_textbookRSA_CRT_signature (mpz_t s,
 }
 
 
-int verify_textbookRSA_standard_signature (mpz_t s,
-                                           uchar data[],
-                                           RSA_public_key_t *pubkey) 
+int verify_textbookRSA_standard_signature (
+    mpz_t s,
+    uchar data[],
+    RSA_public_key_t *pubkey) 
 {
-    /* Uses sender A's public key (n, e) to compute integer $v = s^e mod n$. */
+    /* Compute integer $v = s^e \pmod{n}$. */
     /* Extracts the message digest from this integer. */
-    /* Independently computes the message digest of the information that has been signed. */
-    /* If both message digests are identical, the signature is valid. */
+    /* Independently computes the message digest */ 
+    /* of the information that has been signed. */
+    /* If both message digests are identical, */ 
+    /* the signature is valid. */
     assert(s != NULL);
     assert(data != NULL);
     assert(pubkey != NULL);
@@ -318,13 +320,13 @@ int verify_textbookRSA_standard_signature (mpz_t s,
 
     mpz_import (m, sizeof (hash), 1, 1, 1, 0, hash);
 
-    /* Computing $v = s^e mod n$ */
+    /* Computing $v = s^e \pmod{n}$ */
     mpz_powm (v, s, pubkey->e, pubkey->n);
 
     TRACEVAR (v, "v");
     TRACEVAR (m, "m");
 
-    /* $s^e mon n = Hash(m) mod n$ */
+    /* $s^e\pmod{n} = Hash(m) \pmod{n}$ */
     if ( mpz_cmp (v, m) ) {
         mpz_clears (m, v, NULL);
         return EXIT_SUCCESS;

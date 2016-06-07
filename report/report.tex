@@ -32,6 +32,28 @@ linenos,
 breaklines=true,
 }
 
+\newmintedfile[ccode]{c}{
+    breaklines=true,
+    fontfamily=tt,
+    linenos=true,
+    numberblanklines=true,
+    numbersep=12pt,
+    numbersep=5pt,
+    frame=leftline,
+    framerule=0.4pt,
+    framesep=2mm,
+    funcnamehighlighting=true,
+    tabsize=4,
+    obeytabs=false,
+    mathescape=false,
+    samepage=false,
+    showspaces=false,
+    showtabs =false,
+    texcl=false,
+    mathescape=true,
+}
+
+
 
 % PAGE STYLE
 \pagestyle{fancy}
@@ -82,11 +104,87 @@ This part is dedicated to the implementation of a RSA-CRT fast signing procedure
 
 \section{Implementation}
 \subsection{RSA key generation routine}
+The implementation is based on the corrected series of exercises one of the course. Modification were made to the structure of the private key to store the necessary variables for the RSA -CRT implementation.
 
+\ccode[firstline=32, lastline=40]{../src/rsa.c}
+
+For using the Chinese remainder algorithm, we need to compute three additional variables :
+
+\[
+d_p = e^{-1} \ (\bmod{\ p - 1} )
+\]
+\[
+d_q = e^{-1} \ (\bmod{\ q - 1} )
+\]
+\[
+q_{inv} = q^{-1} \ ( \bmod{\ p} )
+\]
+
+To calculate these variables, the generation routine was modified. GMP library provides a built in method to make this calculs. 
+
+\ccode[firstline=125, lastline=136]{../src/rsa.c}
 
 \subsection{Standard RSA signature and verification routines}
+The RSA signature scheme works like this:
+\begin{enumerate}
+    \item Creates a message digest of the information to be sent.
+    \item Represents this digest as an integer $m$ between 1 and $n-1$.
+    \item Uses her private key $(n, d)$ to compute the signature $s = m^d  \ (\bmod{\ n} )$.
+    \item Sends this signature s to the recipient, B.
+\end{enumerate}
 
+To implement this feature , I add a generate\_textbookRSA\_standard\_signature method. The method takes the big number mpz\_t, the data to be signed and the private key. An implementation of SHA256 is used to create the digest\footnote{\ See \href{http://bradconte.com/sha256\_c}{http://bradconte.com/sha256\_c}.}.
+
+\ccode[firstline=220, lastline=251]{../src/rsa.c}
+
+Implementing the RSA signature verification scheme is similar to the signature generation routine, pretty much the same code. The protocol works like this:
+\begin{enumerate}
+    \item Uses sender A's public key $(n, e)$ to compute integer $v = s^e  \ (\bmod{\ n} )$.
+    \item Extracts the message digest from this integer.
+    \item Independently computes the message digest of the information that has been signed.
+    \item If both message digests are identical, the signature is valid.
+\end{enumerate}
+
+The same SHA256 implementation is used. First we compute the data digest, and secondly we apply the formula:
+
+\[
+v = s^e  \ (\bmod{\ n} )
+\]
+
+Finally the two results are compared. If they are of the same value, then the signature is correct and is really from the expected private key. Otherwise, the data were changed or private key is not good.
+
+\ccode[firstline=296, lastline=337]{../src/rsa.c}
+
+\newpage
 \subsection{Fast RSA signature procedure}
+We can use the CRT to compute $m = c^d\ (\bmod{\ n})$ more efficiently. To do this, we need to precompute the following values given p, q with $p > q$
+
+\[
+d_p = e^{-1} \ (\bmod{\ p - 1} )
+\]
+\[
+d_q = e^{-1} \ (\bmod{\ q - 1} )
+\]
+\[
+q_{inv} = q^{-1} \ ( \bmod{\ p} )
+\]
+
+With these values, we can compute the message $m$ given $c$ with
+
+\[
+m1 = c^{d_p}\ (\bmod\ p)
+\]
+\[
+m2 = c^{d_q}\ (\bmod\ q)
+\]
+\[
+h = q_{inv} * (m1 - m2)\ (\bmod\ p)
+\]
+\[
+m = m2 + h*q 
+\]
+
+\ccode[firstline=254, lastline=293]{../src/rsa.c}
 
 
 \chapter{Boneh-DeMillo-Lipton Attack}
@@ -100,7 +198,7 @@ In 1997, Boneh, DeMillo and Lipton have demonstrated that if a fault is induced 
 \subsection{Is this attack working on a non-deterministic padding scheme?}
 
 \section{Simulating Boneh-DeMillo-Lipton attack}
-\textbf{Task 3.} \textit{Write a program simulating Boneh-DeMillo-Lipton attack that allows to factor $n = pq$ in a very efficient way.}
+\textbf{Task 3.} \textit{Write a program simulating Boneh-DeMillo-Lipton attack that allows to factor $n = p*q$ in a very efficient way.}
 
 
 \chapter{Implementing Shamir’s Trick}
