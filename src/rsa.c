@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <fcntl.h>
-#include <fcntl.h>
-#include <fcntl.h>
+#include <sys/time.h>
+#include <time.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -244,7 +244,7 @@ int generate_textbookRSA_standard_signature (
     /* Computing $s = m^d \pmod{n}$ */
     mpz_powm (s, m, privkey->d, privkey->n);
 
-    TRACEVAR (s, "s");
+    // TRACEVAR (s, "s");
 
     mpz_clears (m, NULL);
     return EXIT_SUCCESS;
@@ -286,7 +286,7 @@ int generate_textbookRSA_CRT_signature (
     mpz_mul (hq, h, privkey->q);
     mpz_add (s, m2, hq);
 
-    TRACEVAR (s, "s");
+    //TRACEVAR (s, "s");
 
     mpz_clears (m, m1, m2, h, hq, qh, m1m2, NULL);
     return EXIT_SUCCESS;
@@ -336,9 +336,20 @@ int verify_textbookRSA_standard_signature (
     }
 }
 
+unsigned long my_ftime(void) { 
+   struct timeval t;
+
+   gettimeofday(&t, NULL);
+   return (long)(t.tv_sec)*1000 + (long)(t.tv_usec/1000);
+}
+
 int main ()
 {
     printf("ICR - labo 3!\n");
+    unsigned long   start_time_std,
+                    end_time_std,
+                    start_time_crt,
+                    end_time_crt;
     mpz_t m, s;
     RSA_public_key_t *pubkey;
     RSA_private_key_t *privkey;
@@ -375,6 +386,23 @@ int main ()
     if ( !verify_textbookRSA_standard_signature (s, msg2, pubkey) ) {
         fprintf (stderr, "\nError: signature not valid\n");
     }
+
+    /* Speed test */
+    start_time_std = my_ftime();
+    for (int i = 0; i < 10000; i++) {
+        generate_textbookRSA_standard_signature (s, msg, privkey);
+    }
+    end_time_std = my_ftime() - start_time_std;
+
+    start_time_crt = my_ftime();
+    for (int i = 0; i < 10000; i++) {
+        generate_textbookRSA_CRT_signature (s, msg, privkey);
+    }
+    end_time_crt = my_ftime() - start_time_crt;
+
+    printf("\nStandard=%g\tCRT=%g\n",
+                end_time_std/1000.0,
+                end_time_crt/1000.0);
 
     clear_RSA_pubkey (pubkey);
     clear_RSA_privkey (privkey);

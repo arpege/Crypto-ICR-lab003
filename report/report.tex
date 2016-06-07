@@ -92,14 +92,32 @@ The goal of this practical work consists in implementing a fast RSA signature pr
 
  
 \chapter{RSA-CRT}
-This part is dedicated to the implementation of a RSA-CRT fast signing procedure. One can assume that 1024-bit RSA keys are used and that the digest formatting operation is performed elsewhere.
+This part is dedicated to the implementation of a RSA-CRT fast signing procedure. One can assume that 1024-bit RSA keys\footnote{\ I used the implementation with 2048-bit RSA Keys} are used and that the digest formatting operation is performed elsewhere.
 
 \section{Questions}
 \subsection{How have you tested that your routines are properly working?}
+Since three methods (standard signature, CRT signature and verification) have been implemented , verifying the proper operation was done using outputs methods as other inputs.
+
+A test is a fact verifying the signature with the string used to generate the signature, then with another character string . The test must pass then fail if the implementation is correct.
 
 \subsection{What is the gain in terms of speed that you obtain when using RSA-CRT with respect to a standard RSA signature generation procedure?}
+To measure the speed increase, the same message was signed by each of the methods 10'000 times. The results obtained are as follows in seconds
+
+\begin{minted}[
+    linenos=true,
+    breaklines=true,
+    frame=leftline,
+    framerule=0.4pt,
+    framesep=2mm,
+    tabsize=4,]{bash}
+Standard=28.407	CRT=7.996
+\end{minted}
+
+The speed up is \textbf{3.5} times faster.
+
 
 \subsection{What are the values that one could pre-compute and store besides n and d, in order to speed up as much as possible the signature generation procedure?}
+To implement the RSA-CRT we need to pre-compute three values : $d_p$, $d_q$ and $q_{inv}$. We also need to store $p$ and $q$ with, or instead of, $n$.
 
 
 \section{Implementation}
@@ -190,7 +208,7 @@ The RSA -CRT implementation is similar in all respects to the standard implement
 
 For a given string of characters, both implementations provide the same signature. This signature is then verified by the function verify\_textbookRSA\\\_standard\_signature. If the signature is not valide, an error message is output.
 
-\ccode[firstline=361, lastline=377]{../src/rsa.c}
+\ccode[firstline=372, lastline=388]{../src/rsa.c}
 
 This code displays the following results. Both generation routine output the same result, the verification pass the first time, and the second verification, which has failed, failed. The behavior is as expected.
 
