@@ -5,6 +5,8 @@ report/report.out
 report/report.synctex.gz
 report/report.toc
 
+src/rsa
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
