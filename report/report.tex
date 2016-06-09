@@ -9,6 +9,7 @@
 \usepackage{listings}
 \usepackage{hyperref}
 \usepackage{url}
+\usepackage{graphicx}
 
 \usepackage{lastpage}
 \usepackage{fancyhdr}
@@ -57,6 +58,15 @@ breaklines=true,
 }
 
 
+\pretitle{%
+  \begin{center}
+  \LARGE
+  \vspace{-3cm}
+  \includegraphics[width=6cm]{logo}\\
+  \vspace{3cm}
+}
+\posttitle{\end{center}}
+
 
 % PAGE STYLE
 \pagestyle{fancy}
@@ -79,6 +89,8 @@ breaklines=true,
 % TITLE PAGE
 \title{ICR -- Practical Work \#3}
 \subtitle{Fault Attacks against RSA-CRT}
+%\titlepicture[width=3in]{logo}
+
 
 \author{Gugger Joël \thanks{\ \href{mailto:joel.gugger@master.hes-so.ch}{joel.gugger@master.hes-so.ch}}}
 \date{\today}
