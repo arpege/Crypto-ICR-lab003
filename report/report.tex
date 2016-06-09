@@ -130,14 +130,15 @@ The implementation is based on the corrected series of exercises one of the cour
 For using the Chinese remainder algorithm, we need to compute three additional variables :
 
 \[
-d_p = e^{-1} \ (\bmod{\ p - 1} )
+\left .
+   \begin{array}{r c l}
+      d_p      & \equiv & e^{-1} \ (\bmod{\ p - 1} ) \\
+      d_q      & \equiv & e^{-1} \ (\bmod{\ q - 1} ) \\
+      q_{inv} & \equiv & q^{-1} \ ( \bmod{\ p} )
+   \end{array}
+\right .
 \]
-\[
-d_q = e^{-1} \ (\bmod{\ q - 1} )
-\]
-\[
-q_{inv} = q^{-1} \ ( \bmod{\ p} )
-\]
+
 
 To calculate these variables, the generation routine was modified. GMP library provides a built in method to make this calculs. 
 
@@ -158,16 +159,16 @@ To implement this feature , I add a generate\_textbookRSA\_standard\_signature m
 
 Implementing the RSA signature verification scheme is similar to the signature generation routine, pretty much the same code. The protocol works like this:
 \begin{enumerate}
-    \item Uses sender A's public key $(n, e)$ to compute integer $v = s^e  \ (\bmod{\ n} )$.
+    \item Uses sender A's public key $\big \langle n, e \big \rangle$ to compute integer $v \equiv S^e  \ (\bmod{\ n} )$.
     \item Extracts the message digest from this integer.
     \item Independently computes the message digest of the information that has been signed.
     \item If both message digests are identical, the signature is valid.
 \end{enumerate}
 
-The same SHA256 implementation is used. First we compute the data digest, and secondly we apply the formula:
+The same SHA256 implementation is used. First we compute the data digest, and secondly we apply the formula
 
 \[
-v = s^e  \ (\bmod{\ n} )
+v \equiv S^e  \ (\bmod{\ n} )
 \]
 
 Finally the two results are compared. If they are of the same value, then the signature is correct and is really from the expected private key. Otherwise, the data were changed or private key is not good.
@@ -179,28 +180,27 @@ Finally the two results are compared. If they are of the same value, then the si
 We can use the CRT to compute $S = m^d\ (\bmod{\ n})$ more efficiently. To do this, we need to precompute the following values given p, q with $p > q$
 
 \[
-d_p = e^{-1} \ (\bmod{\ p - 1} )
+\left .
+   \begin{array}{r c l}
+      d_p      & \equiv & e^{-1} \ (\bmod{\ p - 1} ) \\
+      d_q      & \equiv & e^{-1} \ (\bmod{\ q - 1} ) \\
+      q_{inv} & \equiv & q^{-1} \ ( \bmod{\ p} )
+   \end{array}
+\right .
 \]
-\[
-d_q = e^{-1} \ (\bmod{\ q - 1} )
-\]
-\[
-q_{inv} = q^{-1} \ ( \bmod{\ p} )
-\]
+\ 
 \\
 With these values, we can compute the signature $S$ given $m$ with
 
 \[
-M_1 = m^{d_p}\ (\bmod\ p)
-\]
-\[
-M_2 = m^{d_q}\ (\bmod\ q)
-\]
-\[
-h = q_{inv} * (M_1 - M_2)\ (\bmod\ p)
-\]
-\[
-S = M_2 + h*q 
+\left .
+   \begin{array}{r c l}
+      M_1      & \equiv & m^{d_p}\ (\bmod\ p) \\
+      M_2      & \equiv & m^{d_q}\ (\bmod\ q) \\
+      h           & \equiv & q_{inv} * (M_1 - M_2)\ (\bmod\ p) \\
+      S          & =         & M_2 + h*q 
+   \end{array}
+\right .
 \]
 
 The RSA-CRT implementation is similar in all respects to the standard implementation. Only the 12 lines varies. Again, the GMP library provided us with the necessary methods for calculations on large numbers.
@@ -244,15 +244,13 @@ b34917b2c099bc30c0160377ac4b174ec5a696dc540f802b39\
 b921805551da00bf861900e088199377c7d2c2cd4e827c879\
 d9bb651
 
+RSA-CRT signature:
 v : b19318d0e9ba063a5fe94bc3cb9d9b5d79e06bfed220c86fb137cb40aef36140
-
 m : b19318d0e9ba063a5fe94bc3cb9d9b5d79e06bfed220c86fb137cb40aef36140
-
 v : b19318d0e9ba063a5fe94bc3cb9d9b5d79e06bfed220c86fb137cb40aef36140
-
 m : 78f5975a5d705e9528dd0e8d41206534b7e8c269b139bb151d5c0ca0928247c3
 
-Error: signature not valid
+Error: signature not valid with msg2
 \end{minted}
 
 
@@ -279,12 +277,31 @@ No, this attack applies only to any deterministic padding function $\mu$, such a
 \section{Simulating Boneh-DeMillo-Lipton attack}
 \textbf{Task 3.} \textit{Write a program simulating Boneh-DeMillo-Lipton attack that allows to factor $n = p*q$ in a very efficient way.}
 \\ \\
-The article\footnote{\ \href{https://crypto.stanford.edu/~dabo/papers/RSA-survey.pdf}{\url{https://crypto.stanford.edu/~dabo/papers/RSA-survey.pdf}}} that I used for implementing the attack against RSA-CRT.
+I was inspired by the article "Twenty Years of Attacks on the RSA Cryptosystem"\footnote{\ \href{https://crypto.stanford.edu/~dabo/papers/RSA-survey.pdf}{\url{https://crypto.stanford.edu/~dabo/papers/RSA-survey.pdf}}} to implement the attack against RSA-CRT.
 
+To easily induce a mistake when signing, I implemented a method for generating an improper rangeland signature.
 
-%%%%%%%%%%%%%%%%%
-% TODO
-%%%%%%%%%%%%%%%%%
+\ccode[firstline=334, lastline=334]{../src/rsa.h}
+
+This method repeats the same operation as the RSA-CRT implementation. A line has been added to induce the fault.
+
+\ccode[firstline=357, lastline=365]{../src/rsa.h}
+\ 
+\\
+By subtracting $1$ to the variable $M_2$, we induce the fault for having
+\[
+\left \{
+   \begin{array}{r c l}
+      \widehat{S}^e  & \not\equiv & h(m)\ (\bmod\ n) \\
+      \widehat{S}^e   & \equiv & h(m)\ (\bmod\ p) \\
+      \widehat{S}^e & \not\equiv & h(m)\ (\bmod\ q)
+   \end{array}
+\right .
+\]
+\newpage
+The implementation of the exploit is simple. We sign with the generate\_fault\_RSACRT\_signature method, we check if the signature is correct, when is not we make the calculations to retreive $p$. And when we have $p$, we can compute $q = n / p$.
+
+\ccode[firstline=56, lastline=84]{../src/boneh-demillo-lipton.c}
 
 \chapter{Implementing Shamir’s Trick}
 Several countermeasures have been proposed to defend against Boneh-DeMillo-Lipton attack. In this part, we will study and implement the one that is known as \textit{Shamir’s trick}. This technique essentially works as follows: the partial signatures are computed modulo $rp$ and $rq$, where $r$ is a small (i.e., 32-bit) random integer, instead of working modulo $p$ and $q$, respectively.

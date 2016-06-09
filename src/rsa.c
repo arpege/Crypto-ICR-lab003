@@ -46,13 +46,13 @@ int main ()
     generate_textbookRSA_CRT_signature (s, msg, privkey);
 
     if ( !verify_textbookRSA_standard_signature (s, msg, pubkey) ) {
-        fprintf (stderr, "\nError: signature not valid\n");
+        fprintf (stderr, "\nError: RSA-CRT signature not valid\n");
     }
 
     char msg2[] = "New message";
 
     if ( !verify_textbookRSA_standard_signature (s, msg2, pubkey) ) {
-        fprintf (stderr, "\nError: signature not valid\n");
+        fprintf (stderr, "\nError: signature not valid with msg2\n");
     }
 
     /* Speed test */

@@ -144,7 +144,7 @@ int generate_textbookRSA_keys (RSA_public_key_t *pubkey,
 
     mpz_clears (p, q, pm1, qm1, pm1qm1, r, gcd, NULL);
 
-    return EXIT_SUCCESS ;
+    return EXIT_SUCCESS;
 }
 
 int init_RSA_privkey (RSA_private_key_t **privkey)
@@ -229,13 +229,13 @@ int generate_textbookRSA_standard_signature (
 
     mpz_import (m, sizeof (hash), 1, 1, 1, 0, hash);
 
-    /* Computing $s = m^d \pmod{n}$ */
+    /* Computing $S = m^d \pmod{n}$ */
     mpz_powm (s, m, privkey->d, privkey->n);
 
     // TRACEVAR (s, "s");
 
     mpz_clears (m, NULL);
-    return EXIT_SUCCESS;
+    return 1;
 }
 
 
@@ -277,7 +277,7 @@ int generate_textbookRSA_CRT_signature (
     //TRACEVAR (s, "s");
 
     mpz_clears (m, m1, m2, h, hq, qh, m1m2, NULL);
-    return EXIT_SUCCESS;
+    return 1;
 }
 
 
@@ -314,13 +314,13 @@ int verify_textbookRSA_standard_signature (
     TRACEVAR (v, "v");
     TRACEVAR (m, "m");
 
-    /* $S^e\pmod{n} = Hash(m) \pmod{n}$ */
-    if ( mpz_cmp (v, m) ) {
+    /* $S^e \pmod{n} = Hash(m) \pmod{n}$ */
+    if ( mpz_cmp (v, m) == 0 ) {
         mpz_clears (m, v, NULL);
-        return EXIT_SUCCESS;
+        return 1;
     } else {
         mpz_clears (m, v, NULL);
-        return EXIT_FAILURE;
+        return 0;
     }
 }
 
@@ -329,4 +329,51 @@ unsigned long my_ftime(void) {
 
    gettimeofday(&t, NULL);
    return (long)(t.tv_sec)*1000 + (long)(t.tv_usec/1000);
+}
+
+int generate_fault_RSACRT_signature (mpz_t, uchar[], const RSA_private_key_t *);
+
+int generate_fault_RSACRT_signature (
+    mpz_t s,
+    uchar data[],
+    const RSA_private_key_t *privkey)
+{
+    assert(s != NULL);
+    assert(data != NULL);
+    assert(privkey != NULL);
+
+    SHA256_CTX *sha256 = malloc (sizeof (SHA256_CTX));
+    uchar hash[32];
+    mpz_t m, m1, m2, h, hq, qh, m1m2;
+
+    mpz_inits (m, m1, m2, h, hq, qh, m1m2, NULL);
+
+    sha256_init(sha256);
+    sha256_update(sha256, data, strlen(data));
+    sha256_final(sha256, hash);
+
+    mpz_import (m, sizeof (hash), 1, 1, 1, 0, hash);
+
+    /* Computing $S = m^d\ (\bmod\ n)$ with RSA-CRT */
+
+    /* $M_1 = m^{d_p}\ (\bmod\ p)$ */
+    mpz_powm (m1, m, privkey->dP, privkey->p);
+    /* $M_2 = m^{d_q}\ (\bmod\ q)$ */
+    mpz_powm (m2, m, privkey->dQ, privkey->q);
+
+    /* Induce a fault in $M_2$ */
+    mpz_sub_ui (m2, m2, 1);
+
+    /* $h = q_{inv} * (M_1 - M_2)\ (\bmod\ p)$ */
+    mpz_sub (m1m2, m1, m2);
+    mpz_mul (qh, privkey->qInv, m1m2);
+    mpz_mod (h, qh, privkey->p);
+    /* $S = M_2 + h*q$  */
+    mpz_mul (hq, h, privkey->q);
+    mpz_add (s, m2, hq);
+
+    //TRACEVAR (s, "s");
+
+    mpz_clears (m, m1, m2, h, hq, qh, m1m2, NULL);
+    return EXIT_SUCCESS;
 }
