@@ -8,6 +8,7 @@
 \usepackage{minted}
 \usepackage{listings}
 \usepackage{hyperref}
+\usepackage{url}
 
 \usepackage{lastpage}
 \usepackage{fancyhdr}
@@ -124,7 +125,7 @@ To implement the RSA-CRT we need to pre-compute three values : $d_p$, $d_q$ and 
 \subsection{RSA key generation routine}
 The implementation is based on the corrected series of exercises one of the course. Modification were made to the structure of the private key to store the necessary variables for the RSA -CRT implementation.
 
-\ccode[firstline=32, lastline=40]{../src/rsa.c}
+\ccode[firstline=20, lastline=28]{../src/rsa.h}
 
 For using the Chinese remainder algorithm, we need to compute three additional variables :
 
@@ -140,7 +141,7 @@ q_{inv} = q^{-1} \ ( \bmod{\ p} )
 
 To calculate these variables, the generation routine was modified. GMP library provides a built in method to make this calculs. 
 
-\ccode[firstline=125, lastline=136]{../src/rsa.c}
+\ccode[firstline=113, lastline=124]{../src/rsa.h}
 
 \subsection{Standard RSA signature and verification routines}
 The RSA signature scheme works like this:
@@ -151,9 +152,9 @@ The RSA signature scheme works like this:
     \item Sends this signature s to the recipient, B.
 \end{enumerate}
 
-To implement this feature , I add a generate\_textbookRSA\_standard\_signature method. The method takes the big number mpz\_t, the data to be signed and the private key. An implementation of SHA256 is used to create the digest\footnote{\ See \href{http://bradconte.com/sha256\_c}{http://bradconte.com/sha256\_c}.}.
+To implement this feature , I add a generate\_textbookRSA\_standard\_signature method. The method takes the big number mpz\_t, the data to be signed and the private key. An implementation of SHA256 is used to create the digest\footnote{\ \href{http://bradconte.com/sha256\_c}{\url{http://bradconte.com/sha256\_c}}.}.
 
-\ccode[firstline=220, lastline=251]{../src/rsa.c}
+\ccode[firstline=208, lastline=239]{../src/rsa.h}
 
 Implementing the RSA signature verification scheme is similar to the signature generation routine, pretty much the same code. The protocol works like this:
 \begin{enumerate}
@@ -171,11 +172,11 @@ v = s^e  \ (\bmod{\ n} )
 
 Finally the two results are compared. If they are of the same value, then the signature is correct and is really from the expected private key. Otherwise, the data were changed or private key is not good.
 
-\ccode[firstline=296, lastline=337]{../src/rsa.c}
+\ccode[firstline=284, lastline=325]{../src/rsa.h}
 
 \newpage
 \subsection{Fast RSA signature procedure}
-We can use the CRT to compute $m = c^d\ (\bmod{\ n})$ more efficiently. To do this, we need to precompute the following values given p, q with $p > q$
+We can use the CRT to compute $S = m^d\ (\bmod{\ n})$ more efficiently. To do this, we need to precompute the following values given p, q with $p > q$
 
 \[
 d_p = e^{-1} \ (\bmod{\ p - 1} )
@@ -186,29 +187,29 @@ d_q = e^{-1} \ (\bmod{\ q - 1} )
 \[
 q_{inv} = q^{-1} \ ( \bmod{\ p} )
 \]
-
-With these values, we can compute the message $m$ given $c$ with
+\\
+With these values, we can compute the signature $S$ given $m$ with
 
 \[
-m1 = c^{d_p}\ (\bmod\ p)
+M_1 = m^{d_p}\ (\bmod\ p)
 \]
 \[
-m2 = c^{d_q}\ (\bmod\ q)
+M_2 = m^{d_q}\ (\bmod\ q)
 \]
 \[
-h = q_{inv} * (m1 - m2)\ (\bmod\ p)
+h = q_{inv} * (M_1 - M_2)\ (\bmod\ p)
 \]
 \[
-m = m2 + h*q 
+S = M_2 + h*q 
 \]
 
-The RSA -CRT implementation is similar in all respects to the standard implementation. Only the calculation portion varies. Again, the GMP library provided us with the necessary methods for calculations on large numbers.
+The RSA-CRT implementation is similar in all respects to the standard implementation. Only the 12 lines varies. Again, the GMP library provided us with the necessary methods for calculations on large numbers.
 
-\ccode[firstline=275, lastline=287]{../src/rsa.c}
+\ccode[firstline=263, lastline=275]{../src/rsa.h}
 
 For a given string of characters, both implementations provide the same signature. This signature is then verified by the function verify\_textbookRSA\\\_standard\_signature. If the signature is not valide, an error message is output.
 
-\ccode[firstline=372, lastline=388]{../src/rsa.c}
+\ccode[firstline=40, lastline=56]{../src/rsa.c}
 
 This code displays the following results. Both generation routine output the same result, the verification pass the first time, and the second verification, which has failed, failed. The behavior is as expected.
 
@@ -261,27 +262,44 @@ In 1997, Boneh, DeMillo and Lipton have demonstrated that if a fault is induced 
 \section{Mathematical description}
 \textbf{Task 2.} \textit{Describe in mathematical terms how the Boneh-DeMillo-Lipton fault attack against RSA-CRT is working.}
 \\ \\
-As $s^e \equiv h(m)\ (\bmod\ p)$ but $s^e \not\equiv h(m)\ (\bmod\ q)$ we can factorize $n$ by \\ $p = \textrm{GCD}(s^e - h(m), n)$
+This attack is available when a fault appaires when exactly one of two $M_1$ or $M_2$ will be computed incorrectly. If $M_1$ is correct, but $\widehat{M_2}$ is not. The resulting signature is $\widehat{S} = \widehat{M_2} + h * q$, when Bob receives the signature $\widehat{S}$, he knows it is a false signature since $\widehat{S}^e \not= h(m)\ (\bmod\ n)$.
+\\ \\
+QED: As $\widehat{S}^e \equiv h(m)\ (\bmod\ p)$ but $\widehat{S}^e \not\equiv h(m)\ (\bmod\ q)$ we can factorize $n$ by $p = \textrm{GCD}(S^e - h(m), n)$.
+
 
 \section{Questions}
 \subsection{In practice, how is it possible to induce faults in cryptographic implementations?}
+Heavily inspired by the article "The Sorcerer’s Apprentice Guide to Fault Attacks"\footnote{\ \href{https://eprint.iacr.org/2004/100.pdf}{\url{https://eprint.iacr.org/2004/100.pdf}}}.
 
+Most of methods required to have a physical access on the device. Not a complete access, but it must be possible to interfer with the environement. Like this, we can change the temperature of the chip, variate the supply voltage to skip instructions, or variate the external clock to cause data miss reading.
 
 \subsection{Is this attack working on a non-deterministic padding scheme?}
 No, this attack applies only to any deterministic padding function $\mu$, such as RSA PKCS\#1 v1.5 or Full-Domain Hash.
 
 \section{Simulating Boneh-DeMillo-Lipton attack}
 \textbf{Task 3.} \textit{Write a program simulating Boneh-DeMillo-Lipton attack that allows to factor $n = p*q$ in a very efficient way.}
+\\ \\
+The article\footnote{\ \href{https://crypto.stanford.edu/~dabo/papers/RSA-survey.pdf}{\url{https://crypto.stanford.edu/~dabo/papers/RSA-survey.pdf}}} that I used for implementing the attack against RSA-CRT.
 
+
+%%%%%%%%%%%%%%%%%
+% TODO
+%%%%%%%%%%%%%%%%%
 
 \chapter{Implementing Shamir’s Trick}
 Several countermeasures have been proposed to defend against Boneh-DeMillo-Lipton attack. In this part, we will study and implement the one that is known as \textit{Shamir’s trick}. This technique essentially works as follows: the partial signatures are computed modulo $rp$ and $rq$, where $r$ is a small (i.e., 32-bit) random integer, instead of working modulo $p$ and $q$, respectively.
 
 \section{Mathematical description}
 \textbf{Task 4.} \textit{Describe in mathematical terms how Shamir’s trick works.}
+%%%%%%%%%%%%%%%%%
+% TODO
+%%%%%%%%%%%%%%%%%
 
 \section{Implementation}
 \textbf{Task 5.} \textit{Implement an RSA-CRT routine protected against Boneh-DeMillo-Lipton attack thanks to Shamir’s trick.}
+%%%%%%%%%%%%%%%%%
+% TODO
+%%%%%%%%%%%%%%%%%
 
 
 \newpage
@@ -290,7 +308,7 @@ Several countermeasures have been proposed to defend against Boneh-DeMillo-Lipto
 \textbf{Abstract} \\
 \ \\
 The sources of the project are available on GitHub at the following address: \\
-\href{https://github.com/GuggerJoel/Crypto-ICR-lab003}{https://github.com/GuggerJoel/Crypto-ICR-lab003}
+\href{https://github.com/GuggerJoel/Crypto-ICR-lab003}{\url{https://github.com/GuggerJoel/Crypto-ICR-lab003}}
 \end{center}
 
 
