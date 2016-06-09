@@ -47,7 +47,7 @@ int main ()
     /* Key generation procedure */
     generate_textbookRSA_keys (pubkey, privkey);
 
-    generate_textbookRSA_standard_signature (s, msg, privkey);
+    generate_textbookRSA_CRT_signature (s, msg, privkey);
 
     if ( !verify_textbookRSA_standard_signature (s, msg, pubkey) ) {
         fprintf (stderr, "\nError: signature not valid\n");
@@ -81,6 +81,20 @@ int main ()
             printf("\n*   Failed attack!   *");
             printf("\n**********************\n");
         }
+    }
+
+    printf("generate_RSACRT_signature_shamir");
+    generate_RSACRT_signature_shamir (s, msg, privkey);
+    TRACEVAR (s, "s");
+    if ( !verify_textbookRSA_standard_signature (s, msg, pubkey) ) {
+        fprintf (stderr, "\nError: signature not valid\n");
+    }
+
+    printf("generate_textbookRSA_CRT_signature");
+    generate_textbookRSA_CRT_signature (s, msg, privkey);
+    TRACEVAR (s, "s");
+    if ( !verify_textbookRSA_standard_signature (s, msg, pubkey) ) {
+        fprintf (stderr, "\nError: signature not valid\n");
     }
 
     /* Destroy keys */

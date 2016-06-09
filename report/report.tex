@@ -26,6 +26,8 @@
     \vskip0.5em}
 }
 
+\def\R{\textrm{I\kern-0.21emR}}
+
 \newmint{python}{
 frame=lines,
 framesep=2mm,
@@ -308,16 +310,74 @@ Several countermeasures have been proposed to defend against Boneh-DeMillo-Lipto
 
 \section{Mathematical description}
 \textbf{Task 4.} \textit{Describe in mathematical terms how Shamir’s trick works.}
-%%%%%%%%%%%%%%%%%
-% TODO
-%%%%%%%%%%%%%%%%%
+\\ \\
+Let $r \in \R \in \{0,1\}^{32}$ a random prime number with
 
+\[
+\left .
+   \begin{array}{r c l}
+      S_{rp}  & =  & m^{d\bmod\varphi (p\cdot r)}\ (\bmod\ p\cdot r) \\
+      S_{rq}  & =  & m^{d\bmod\varphi (q\cdot r)}\ (\bmod\ q\cdot r)
+   \end{array}
+\right .
+\]
+\ 
+\\
+with
+
+\[
+\left .
+   \begin{array}{r c l}
+      \varphi (p\cdot r)  & =  & (p-1)(r-1) \\
+      \varphi (q\cdot r)  & =  & (q-1)(r-1)
+   \end{array}
+\right .
+\]
+\ 
+
+If $S_{rp} \equiv S_{rq}\ (\bmod\ r)$, then both partial signature are correct, we can return $S = CRT(S_{rp}, S_{rq})$. Else, $S_{rp} \not\equiv S_{rq}\ (\bmod\ r)$, an error has occurred and we must return an error or retry.
+\\ \\
+To compute $S = CRT(S_{rp}, S_{rq})$ we need to recover $S_{p}$ and $S_{q}$
+
+\[
+\left .
+   \begin{array}{r c l}
+      S_{p}  & \leftarrow  & S_{rp}\ (\bmod\ p) \\
+      S_{q}  & \leftarrow  & S_{rq}\ (\bmod\ q)
+   \end{array}
+\right .
+\]
+And recombine $S_{p}$ and $S_{q}$ as explained previously to get the signature $S$ with the CRT
+
+\[
+\left .
+   \begin{array}{r c l}
+      h         & \equiv       & q_{inv} * (S_p - S_q)\ (\bmod\ p) \\
+      S         & =              & S_q + h*q 
+   \end{array}
+\right .
+\]
+
+\newpage
 \section{Implementation}
 \textbf{Task 5.} \textit{Implement an RSA-CRT routine protected against Boneh-DeMillo-Lipton attack thanks to Shamir’s trick.}
-%%%%%%%%%%%%%%%%%
-% TODO
-%%%%%%%%%%%%%%%%%
+\\ \\
+A new method was created to implement the Shamir's Trick.
 
+\ccode[firstline=380, lastline=381]{../src/rsa.h}
+
+We need a random prime number $r \in \R \in \{0,1\}^{32}$. To do this we read 4 bytes on the /dev/urandom device, we convert the result to a big number with GMP and we search the next prime.
+
+\ccode[firstline=424, lastline=435]{../src/rsa.h}
+
+All calculations are done with GMP. While $S_{rp} \not\equiv S_{rq}\ (\bmod\ r)$, the loop continue, we read a new random prime number and make calculations.
+
+\ccode[firstline=437, lastline=453]{../src/rsa.h}
+\
+\\
+If $S_{rp} \equiv S_{rq}\ (\bmod\ r)$, we retrieve $S_{p}$ and $S_{q}$ and return $S = CRT(S_{rp}, S_{rq})$.
+
+\ccode[firstline=455, lastline=464]{../src/rsa.h}
 
 \newpage
 \vspace*{6 cm}

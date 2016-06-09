@@ -375,5 +375,100 @@ int generate_fault_RSACRT_signature (
     //TRACEVAR (s, "s");
 
     mpz_clears (m, m1, m2, h, hq, qh, m1m2, NULL);
-    return EXIT_SUCCESS;
+    return 1;
+}
+
+int generate_RSACRT_signature_shamir (mpz_t, uchar[], const RSA_private_key_t *);
+
+int generate_RSACRT_signature_shamir (
+    mpz_t s,
+    uchar data[],
+    const RSA_private_key_t *privkey)
+{
+    assert(s != NULL);
+    assert(data != NULL);
+    assert(privkey != NULL);
+
+    char rnd[4];
+    int fd;
+
+    SHA256_CTX *sha256 = malloc (sizeof (SHA256_CTX));
+    uchar hash[32];
+    mpz_t m, sp, sq, h, 
+          hq, qh, m1m2, 
+          pr, qr, r,
+          dp, dq,
+          rm1, pm1, qm1,
+          pm1rm1, qm1rm1,
+          tsp, tsq;
+
+    mpz_inits (m, sp, sq, h, 
+               hq, qh, m1m2, 
+               pr, qr, r,
+               dp, dq,
+               rm1, pm1, qm1,
+               pm1rm1, qm1rm1,
+               tsp, tsq, NULL);
+
+    sha256_init(sha256);
+    sha256_update(sha256, data, strlen(data));
+    sha256_final(sha256, hash);
+
+    mpz_import (m, sizeof (hash), 1, 1, 1, 0, hash);
+    
+    if ( (fd = open ("/dev/urandom", O_RDONLY)) == -1) {
+        perror ("Error: impossible to open the randomness source");
+        return EXIT_FAILURE; 
+    }
+
+    do {
+        if ( read (fd, rnd, 4) != 4 ) {
+            perror ("Error: impossible to read enough random bytes");
+            /* Don’t forget to close the file descriptor */
+            if ( close (fd) ) {
+                perror ("Error: impossible to close the randomness source");
+            }
+            return EXIT_FAILURE; 
+        }
+
+        mpz_import (r, 4, 1, 1, 1, 0, rnd);
+        mpz_nextprime (r, r);
+
+        mpz_sub_ui (rm1, r, 1);
+        /* $S_{rp} = m^{d\bmod\varphi (p\cdot r)}\ (\bmod\ p\cdot r)$ */
+        mpz_mul (pr, privkey->p, r);
+        mpz_sub_ui (pm1, privkey->p, 1);
+        mpz_mul (pm1rm1, pm1, rm1);
+        mpz_mod (dp, privkey->d, pm1rm1);
+        mpz_powm (sp, m, dp, pr);
+        /* $S_{rq} = m^{d\bmod\varphi (q\cdot r)}\ (\bmod\ q\cdot r)$ */
+        mpz_mul (qr, privkey->q, r);
+        mpz_sub_ui (qm1, privkey->q, 1);
+        mpz_mul (qm1rm1, qm1, rm1);
+        mpz_mod (dq, privkey->d, qm1rm1);
+        mpz_powm (sq, m, dq, qr);
+        /* $S_{rp} \equiv S_{rq}\ (\bmod\ r)$ */
+        mpz_mod (tsp, sp, r);
+        mpz_mod (tsq, sq, r);
+    } while (mpz_cmp (tsp, tsq) != 0);
+
+    mpz_mod (sp, sp, privkey->p);
+    mpz_mod (sq, sq, privkey->q);
+    
+    /* $h = q_{inv} * (S_p - S_q)\ (\bmod\ p)$ */
+    mpz_sub (m1m2, sp, sq);
+    mpz_mul (qh, privkey->qInv, m1m2);
+    mpz_mod (h, qh, privkey->p);
+    /* $S = S_q + h*q$  */
+    mpz_mul (hq, h, privkey->q);
+    mpz_add (s, sq, hq);
+
+    mpz_clears (m, sp, sq, h, 
+                hq, qh, m1m2, 
+                pr, qr, r,
+                dp, dq,
+                rm1, pm1, qm1,
+                pm1rm1, qm1rm1,
+                tsp, tsq, NULL);
+    return 1;
 }
