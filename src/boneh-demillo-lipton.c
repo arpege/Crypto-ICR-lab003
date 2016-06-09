@@ -49,7 +49,7 @@ int main ()
 
     generate_textbookRSA_standard_signature (s, msg, privkey);
 
-    if ( verify_textbookRSA_standard_signature (s, msg, pubkey) ) {
+    if ( !verify_textbookRSA_standard_signature (s, msg, pubkey) ) {
         fprintf (stderr, "\nError: signature not valid\n");
     }
 
